@@ -1,0 +1,77 @@
+package com.example.personalfinancemanager.service;
+
+import com.example.personalfinancemanager.events.TransactionCreatedEvent;
+import com.example.personalfinancemanager.model.Account;
+import com.example.personalfinancemanager.model.Transaction;
+import com.example.personalfinancemanager.repository.AccountRepository;
+import com.example.personalfinancemanager.repository.TransactionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class TransactionServiceImpl implements TransactionService {
+
+    @Autowired
+    private TransactionRepository transactionRepository;
+
+    @Autowired
+    private AccountRepository accountRepository;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
+    @Override
+    public List<Transaction> getAllTransactions() {
+        return transactionRepository.findAll();
+    }
+
+    @Override
+    public Transaction getTransactionById(Long id) {
+        Optional<Transaction> optionalTransaction = transactionRepository.findById(id);
+        return optionalTransaction.orElseThrow(() -> new TransactionNotFoundException("Transaction not found with ID: " + id));
+    }
+
+    @Override
+    public Transaction createTransaction(Transaction transaction) {
+        // Validate transaction (e.g., check account balance for expenses)
+        if (transaction.getType() == TransactionType.EXPENSE) {
+            Account account = getAccount(transaction.getAccountId());
+            if (account.getBalance().compareTo(transaction.getAmount()) < 0) {
+                throw new InsufficientFundsException("Insufficient funds in the account.");
+            }
+            account.setBalance(account.getBalance().subtract(transaction.getAmount()));
+            accountRepository.save(account); 
+        }
+
+        Transaction savedTransaction = transactionRepository.save(transaction);
+        eventPublisher.publishEvent(new TransactionCreatedEvent(this, savedTransaction, transaction.getAmount()));
+        return savedTransaction;
+    }
+
+    @Override
+    public Transaction updateTransaction(Long id, Transaction transaction) {
+        // Validate transaction (e.g., check account balance for updated expense amounts)
+        Transaction existingTransaction = getTransactionById(id); 
+        if (!existingTransaction.getType().equals(transaction.getType())) {
+            // Handle type change (e.g., update account balances accordingly) 
+        }
+        transaction.setId(id);
+        return transactionRepository.save(transaction);
+    }
+
+    @Override
+    public void deleteTransaction(Long id) {
+        Transaction transaction = getTransactionById(id); 
+        // Handle account balance updates (e.g., reverse the transaction amount if it was an expense)
+        transactionRepository.deleteById(id);
+    }
+
+    private Account getAccount(Long accountId) {
+        Optional<Account> optionalAccount = accountRepository.findById(accountId);
+        return optionalAccount.orElseThrow(() -> new AccountNotFoundException("Account not found."));
+    }
