@@ -1,0 +1,79 @@
+package com.example.personalfinancemanager.service;
+
+import com.example.personalfinancemanager.events.TransactionCreatedEvent;
+import com.example.personalfinancemanager.model.Account;
+import com.example.personalfinancemanager.model.Transaction;
+import com.example.personalfinancemanager.repository.AccountRepository;
+import com.example.personalfinancemanager.repository.TransactionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Service layer for managing transaction-related operations.
+ */
+@Service
+public class TransactionServiceImpl implements TransactionService {
+
+    @Autowired
+    private TransactionRepository transactionRepository;
+
+    @Autowired
+    private AccountRepository accountRepository;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
+    /**
+     * Retrieves a list of all transactions.
+     *
+     * @return A list of all transactions.
+     */
+    @Override
+    public List<Transaction> getAllTransactions() {
+        return transactionRepository.findAll();
+    }
+
+    /**
+     * Retrieves a single transaction by its ID.
+     *
+     * @param id The ID of the transaction.
+     * @return The transaction with the given ID.
+     * @throws TransactionNotFoundException if the transaction is not found.
+     */
+    @Override
+    public Transaction getTransactionById(Long id) {
+        Optional<Transaction> optionalTransaction = transactionRepository.findById(id);
+        return optionalTransaction.orElseThrow(() -> new TransactionNotFoundException("Transaction not found with ID: " + id));
+    }
+
+    /**
+     * Creates a new transaction.
+     *
+     * @param transaction The transaction to be created.
+     * @return The created transaction.
+     * @throws InsufficientFundsException if the account balance is insufficient for an expense transaction.
+     */
+    @Override
+    public Transaction createTransaction(Transaction transaction) {
+        // Validate transaction (e.g., check account balance for expenses)
+        if (transaction.getType() == TransactionType.EXPENSE) {
+            Account account = getAccount(transaction.getAccountId());
+            if (account.getBalance().compareTo(transaction.getAmount()) < 0) {
+                throw new InsufficientFundsException("Insufficient funds in the account.");
+            }
+            account.setBalance(account.getBalance().subtract(transaction.getAmount()));
+            accountRepository.save(account); 
+        }
+
+        Transaction savedTransaction = transactionRepository.save(transaction);
+        eventPublisher.publishEvent(new TransactionCreatedEvent(this, savedTransaction, transaction.getAmount()));
+        return savedTransaction;
+    }
+
+    // ... other methods with appropriate documentation ...
+}
