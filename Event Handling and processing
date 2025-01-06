@@ -1,0 +1,26 @@
+package com.example.personalfinancemanager.events;
+
+import com.example.personalfinancemanager.model.Transaction;
+import org.springframework.context.ApplicationEvent;
+
+import java.math.BigDecimal;
+
+public class TransactionCreatedEvent extends ApplicationEvent {
+
+    private final Transaction transaction;
+    private final BigDecimal transactionAmount;
+
+    public TransactionCreatedEvent(Object source, Transaction transaction, BigDecimal transactionAmount) {
+        super(source);
+        this.transaction = transaction;
+        this.transactionAmount = transactionAmount;
+    }
+
+    public Transaction getTransaction() {
+        return transaction;
+    }
+
+    public BigDecimal getTransactionAmount() {
+        return transactionAmount;
+    }
+}
