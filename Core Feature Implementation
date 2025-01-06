@@ -1,0 +1,63 @@
+package com.example.personalfinancemanager.service;
+
+import com.example.personalfinancemanager.exception.TransactionNotFoundException;
+import com.example.personalfinancemanager.model.Transaction;
+import com.example.personalfinancemanager.repository.TransactionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class TransactionServiceImpl implements TransactionService {
+
+    @Autowired
+    private TransactionRepository transactionRepository;
+
+    @Override
+    public List<Transaction> getAllTransactions() {
+        return transactionRepository.findAll();
+    }
+
+    @Override
+    public Transaction getTransactionById(Long id) {
+        Optional<Transaction> optionalTransaction = transactionRepository.findById(id);
+        return optionalTransaction.orElseThrow(() -> new TransactionNotFoundException("Transaction not found with ID: " + id));
+    }
+
+    @Override
+    public Transaction createTransaction(Transaction transaction) {
+        return transactionRepository.save(transaction);
+    }
+
+    @Override
+    public Transaction updateTransaction(Long id, Transaction transaction) {
+        transaction.setId(id);
+        return transactionRepository.save(transaction);
+    }
+
+    @Override
+    public void deleteTransaction(Long id) {
+        transactionRepository.deleteById(id);
+    }
+
+    // Example of a core feature: Calculate total expenses
+    public double calculateTotalExpenses() {
+        List<Transaction> expenses = transactionRepository.findByType("Expense"); 
+        double totalExpenses = 0.0;
+        for (Transaction expense : expenses) {
+            totalExpenses += expense.getAmount();
+        }
+        return totalExpenses;
+    }
+
+    // Example of a core feature: Calculate net worth
+    public double calculateNetWorth() {
+        double totalIncome = transactionRepository.findByType("Income").stream()
+                .mapToDouble(Transaction::getAmount)
+                .sum();
+        double totalExpenses = calculateTotalExpenses(); 
+        return totalIncome - totalExpenses;
+    }
+}
