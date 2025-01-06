@@ -1,0 +1,69 @@
+package com.example.personalfinancemanager;
+
+import com.example.personalfinancemanager.model.Transaction;
+import com.example.personalfinancemanager.repository.TransactionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class TransactionServiceImpl implements TransactionService {
+
+    @Autowired
+    private TransactionRepository transactionRepository;
+
+    @Override
+    public List<Transaction> getAllTransactions() {
+        return transactionRepository.findAll();
+    }
+
+    @Override
+    public Transaction getTransactionById(Long id) {
+        Optional<Transaction> optionalTransaction = transactionRepository.findById(id);
+        return optionalTransaction.orElseThrow(() -> new TransactionNotFoundException("Transaction not found with ID: " + id));
+    }
+
+    @Override
+    public Transaction createTransaction(Transaction transaction) {
+        return transactionRepository.save(transaction);
+    }
+
+    @Override
+    public Transaction updateTransaction(Long id, Transaction transaction) {
+        transaction.setId(id);
+        return transactionRepository.save(transaction);
+    }
+
+    @Override
+    public void deleteTransaction(Long id) {
+        transactionRepository.deleteById(id);
+    }
+
+    // ... other service methods ...
+}
+
+// TransactionRepository interface (example using Spring Data JPA)
+public interface TransactionRepository extends JpaRepository<Transaction, Long> {
+    // Custom query methods can be defined here
+}
+
+// TransactionController (simplified)
+@RestController
+@RequestMapping("/api/transactions")
+public class TransactionController {
+
+    @Autowired
+    private TransactionService transactionService;
+
+    // Controller methods as defined previously
+}
+
+// Transaction model class (with validations)
+@Entity
+public class Transaction {
+
+    // ... (fields and annotations as defined previously)
+
+}
