@@ -1,0 +1,20 @@
+// TransactionServiceImpl (improved)
+public Transaction createTransaction(Transaction transaction) {
+    // 1. Validate transaction data (e.g., using a separate validation service)
+    if (!isValidTransaction(transaction)) { 
+        // Handle validation errors (e.g., throw an exception)
+    }
+
+    // 2. Save transaction to database
+    Transaction savedTransaction = transactionRepository.save(transaction);
+
+    // 3. Publish event 
+    eventPublisher.publishEvent(new TransactionCreatedEvent(this, savedTransaction, transaction.getAmount())); 
+
+    return savedTransaction;
+}
+
+private boolean isValidTransaction(Transaction transaction) {
+    // Perform validation checks (e.g., non-null fields, valid amounts)
+    // ...
+}
