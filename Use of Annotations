@@ -1,0 +1,81 @@
+import javax.persistence.*;
+import javax.validation.constraints.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Entity
+public class Transaction {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotNull(message = "Transaction date is required")
+    private LocalDate transactionDate;
+
+    @NotNull(message = "Amount is required")
+    @DecimalMin(value = "0.01", inclusive = false, message = "Amount must be greater than 0")
+    private BigDecimal amount;
+
+    @NotNull(message = "Type is required")
+    @Enumerated(EnumType.STRING)
+    private TransactionType type;
+
+    @Size(max = 255, message = "Description cannot exceed 255 characters")
+    private String description;
+
+    // Getters and Setters
+
+    // ...
+}
+
+public enum TransactionType {
+    INCOME, EXPENSE
+}
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/transactions")
+public class TransactionController {
+
+    @Autowired
+    private TransactionService transactionService;
+
+    @GetMapping
+    public ResponseEntity<List<Transaction>> getAllTransactions() {
+        List<Transaction> transactions = transactionService.getAllTransactions();
+        return new ResponseEntity<>(transactions, HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Transaction> getTransactionById(@PathVariable Long id) {
+        Transaction transaction = transactionService.getTransactionById(id);
+        return new ResponseEntity<>(transaction, HttpStatus.OK);
+    }
+
+    @PostMapping
+    public ResponseEntity<Transaction> createTransaction(@Valid @RequestBody Transaction transaction) {
+        Transaction createdTransaction = transactionService.createTransaction(transaction);
+        return new ResponseEntity<>(createdTransaction, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Transaction> updateTransaction(@PathVariable Long id, @Valid @RequestBody Transaction transaction) {
+        Transaction updatedTransaction = transactionService.updateTransaction(id, transaction);
+        return new ResponseEntity<>(updatedTransaction, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTransaction(@PathVariable Long id) {
+        transactionService.deleteTransaction(id);
+        return ResponseEntity.noContent().build();
+    }
+}
