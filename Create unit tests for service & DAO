@@ -1,0 +1,80 @@
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import com.example.personalfinancemanager.exceptions.TransactionNotFoundException;
+import com.example.personalfinancemanager.model.Transaction;
+import com.example.personalfinancemanager.model.TransactionType;
+import com.example.personalfinancemanager.repository.TransactionRepository;
+import com.example.personalfinancemanager.service.TransactionServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+public class TransactionServiceTest {
+
+    @InjectMocks
+    private TransactionServiceImpl transactionService;
+
+    @Mock
+    private TransactionRepository transactionRepository;
+
+    private Transaction transaction1;
+    private Transaction transaction2;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+
+        transaction1 = new Transaction();
+        transaction1.setId(1L);
+        transaction1.setTransactionDate(LocalDate.now());
+        transaction1.setAmount(BigDecimal.valueOf(100));
+        transaction1.setType(TransactionType.INCOME);
+
+        transaction2 = new Transaction();
+        transaction2.setId(2L);
+        transaction2.setTransactionDate(LocalDate.now().minusDays(1));
+        transaction2.setAmount(BigDecimal.valueOf(50));
+        transaction2.setType(TransactionType.EXPENSE);
+    }
+
+    @Test
+    void getAllTransactions() {
+        List<Transaction> transactions = new ArrayList<>();
+        transactions.add(transaction1);
+        transactions.add(transaction2);
+        when(transactionRepository.findAll()).thenReturn(transactions);
+
+        List<Transaction> result = transactionService.getAllTransactions();
+
+        assertEquals(2, result.size());
+        assertEquals(transaction1, result.get(0));
+        assertEquals(transaction2, result.get(1));
+    }
+
+    @Test
+    void getTransactionById_found() {
+        when(transactionRepository.findById(1L)).thenReturn(Optional.of(transaction1));
+
+        Transaction result = transactionService.getTransactionById(1L);
+
+        assertEquals(transaction1, result);
+    }
+
+    @Test
+    void getTransactionById_notFound() {
+        when(transactionRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(TransactionNotFoundException.class, () -> transactionService.getTransactionById(1L));
+    }
+
+    // Add more test cases for other service methods
+}
