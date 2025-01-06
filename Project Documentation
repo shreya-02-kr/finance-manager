@@ -1,0 +1,93 @@
+Project Documentation: Personal Finance Manager
+1. Introduction
+
+1.1 Project Overview:
+
+This document outlines the design, implementation, and testing of a Personal Finance Manager application developed using Java, Spring Boot, and JPA.
+The application allows users to track their income and expenses, analyze their spending habits, and make informed financial decisions.
+1.2 Project Goals:
+
+Develop a user-friendly and efficient application for managing personal finances.
+Provide a secure and reliable platform for users to track their financial transactions.
+Enable users to gain insights into their spending patterns and make informed financial decisions.
+1.3 Project Scope:
+
+Core Features:
+Track income and expenses.
+Categorize transactions (e.g., income, rent, groceries, entertainment).
+View transaction history.
+Generate reports (e.g., monthly spending, net worth).
+Set budgets and track progress.
+Out of Scope:
+Integration with external financial institutions (e.g., bank accounts).
+Investment tracking and portfolio management.
+Tax calculations and reporting.
+User authentication and authorization (beyond basic user accounts).
+2. System Architecture
+
+2.1 Technology Stack:
+Programming Language: Java
+Framework: Spring Boot
+ORM: JPA (e.g., Hibernate)
+Database: H2 (in-memory) - for development and testing, consider a production-ready database like PostgreSQL or MySQL for deployment.
+Build Tool: Maven or Gradle
+2.2 System Diagram:
+[Include a simple UML diagram or a visual representation of the system architecture, showing the interaction between the controller, service, repository, and model layers.]
+3. Design and Implementation
+
+3.1 Model:
+
+Transaction:
+Attributes: id (Long), date (LocalDate), amount (BigDecimal), type (enum: INCOME, EXPENSE), category (String), description (String), accountId (Long)
+Annotations: @Entity, @Id, @GeneratedValue, @NotNull, @DecimalMin, @Size, @Enumerated
+Account:
+Attributes: id (Long), name (String), balance (BigDecimal)
+Annotations: @Entity, @Id, @GeneratedValue
+3.2 Repository:
+
+TransactionRepository: Interface extending JpaRepository for CRUD operations on transactions.
+AccountRepository: Interface extending JpaRepository for CRUD operations on accounts.
+3.3 Service:
+
+TransactionService:
+Implements business logic for transactions (create, read, update, delete).
+Handles account balance updates for expenses.
+Calculates net worth, total expenses, etc.
+Publishes events (e.g., TransactionCreatedEvent).
+3.4 Controller:
+
+TransactionController: Handles HTTP requests (GET, POST, PUT, DELETE) for transactions.
+Uses @RestController, @RequestMapping, @PathVariable, @RequestBody annotations.
+Delegates business logic to the TransactionService.
+Implements exception handling and data validation.
+3.5 Event Handling:
+
+Utilizes Spring's Eventing mechanism.
+Publishes events (e.g., TransactionCreatedEvent) to notify other parts of the application.
+Listens to events and performs appropriate actions (e.g., update account balances).
+4. Testing
+
+Unit Tests:
+Test TransactionServiceImpl methods with Mockito for mocking dependencies.
+Test edge cases and boundary conditions.
+Integration Tests:
+Test the interaction between different components (controller, service, repository).
+End-to-End Tests:
+Test the entire application flow from user interaction to database updates.
+5. Deployment
+
+Deployment Environment: Describe the target environment (e.g., local machine, cloud platform like AWS, Heroku).
+Deployment Process: Outline the steps involved in deploying the application (e.g., building the application, deploying to the server, configuring the database).
+6. Future Enhancements
+
+User Authentication and Authorization
+Integration with External Financial Institutions
+Budgeting and Goal Setting
+Investment Tracking
+Reporting and Analytics (Charts, Graphs)
+User Interface Enhancements
+Internationalization and Localization
+Improved Security Measures
+7. Conclusion
+
+This document provides a high-level overview of the Personal Finance Manager project. The project demonstrates the use of core Java concepts and Spring Boot framework for building a practical and useful application.
