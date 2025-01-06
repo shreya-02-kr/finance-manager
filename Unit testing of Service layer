@@ -1,0 +1,124 @@
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import com.example.personalfinancemanager.exceptions.InsufficientFundsException;
+import com.example.personalfinancemanager.exceptions.TransactionNotFoundException;
+import com.example.personalfinancemanager.model.Account;
+import com.example.personalfinancemanager.model.Transaction;
+import com.example.personalfinancemanager.model.TransactionType;
+import com.example.personalfinancemanager.repository.AccountRepository;
+import com.example.personalfinancemanager.service.TransactionServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+public class TransactionServiceTest {
+
+    @InjectMocks
+    private TransactionServiceImpl transactionService;
+
+    @Mock
+    private TransactionRepository transactionRepository;
+
+    @Mock
+    private AccountRepository accountRepository;
+
+    private Transaction transaction1;
+    private Transaction transaction2;
+    private Account account;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+
+        transaction1 = new Transaction();
+        transaction1.setId(1L);
+        transaction1.setTransactionDate(LocalDate.now());
+        transaction1.setAmount(BigDecimal.valueOf(100));
+        transaction1.setType(TransactionType.INCOME);
+        transaction1.setAccountId(1L); 
+
+        transaction2 = new Transaction();
+        transaction2.setId(2L);
+        transaction2.setTransactionDate(LocalDate.now().minusDays(1));
+        transaction2.setAmount(BigDecimal.valueOf(50));
+        transaction2.setType(TransactionType.EXPENSE);
+        transaction2.setAccountId(1L); 
+
+        account = new Account();
+        account.setId(1L);
+        account.setBalance(BigDecimal.valueOf(150)); 
+    }
+
+    @Test
+    void getAllTransactions() {
+        List<Transaction> transactions = new ArrayList<>();
+        transactions.add(transaction1);
+        transactions.add(transaction2);
+        when(transactionRepository.findAll()).thenReturn(transactions);
+
+        List<Transaction> result = transactionService.getAllTransactions();
+
+        assertEquals(2, result.size());
+        assertTrue(result.contains(transaction1));
+        assertTrue(result.contains(transaction2));
+    }
+
+    @Test
+    void getTransactionById_found() {
+        when(transactionRepository.findById(1L)).thenReturn(Optional.of(transaction1));
+
+        Transaction result = transactionService.getTransactionById(1L);
+
+        assertEquals(transaction1, result);
+    }
+
+    @Test
+    void getTransactionById_notFound() {
+        when(transactionRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(TransactionNotFoundException.class, () -> transactionService.getTransactionById(1L));
+    }
+
+    @Test
+    void createTransaction_income() {
+        when(transactionRepository.save(transaction1)).thenReturn(transaction1); 
+
+        Transaction createdTransaction = transactionService.createTransaction(transaction1);
+
+        assertEquals(transaction1, createdTransaction);
+        verify(transactionRepository, times(1)).save(transaction1);
+    }
+
+    @Test
+    void createTransaction_expense() {
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+        when(transactionRepository.save(transaction2)).thenReturn(transaction2);
+
+        Transaction createdTransaction = transactionService.createTransaction(transaction2);
+
+        assertEquals(transaction2, createdTransaction);
+        verify(transactionRepository, times(1)).save(transaction2);
+        verify(accountRepository, times(1)).findById(1L));
+        verify(accountRepository, times(1)).save(account);
+    }
+
+    @Test
+    void createTransaction_expense_insufficientFunds() {
+        account.setBalance(BigDecimal.valueOf(40));
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+
+        assertThrows(InsufficientFundsException.class, () -> transactionService.createTransaction(transaction2));
+    }
+
+    // Add more test cases for updateTransaction(), deleteTransaction(), 
+    // calculateTotalExpenses(), calculateNetWorth(), etc.
+}
